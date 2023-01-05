@@ -91,7 +91,7 @@ class dnn(torch.nn.Module):
 
 # LNN dynamics model
 class lnn(torch.nn.Module):
-    def __init__(self, env_name, obs_size, action_size, dt, n, batch_size, device):
+    def __init__(self, env_name, n, obs_size, action_size, dt, batch_size, device):
         super(lnn, self).__init__()
         self.env_name = env_name
         self.dt = dt
