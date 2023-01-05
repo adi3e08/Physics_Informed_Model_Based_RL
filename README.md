@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-<img src="https://adi3e08.github.io/files/research/pimbrl/lnn_dnn.svg" width="65%"/>
+<img src="https://adi3e08.github.io/files/research/pimbrl/lnn_dnn.svg" width="75%"/>
 </p>
 
 <p align="center">
@@ -24,9 +24,8 @@
 This work is currently under review at L4DC 2023. Previously, this work was accepted at Deep RL workshop, Neurips 2022 and RLDM 2022.
 
 For more information check out,
-
-- <a href="https://adi3e08.github.io/research/pimbrl" target="_blank">Project Webpage</a>
-- <a href="https://arxiv.org/abs/2212.02179" target="_blank">Preprint</a> </p>
+- [Project Webpage](https://adi3e08.github.io/research/pimbrl){:target="blank"}
+- [Preprint](https://arxiv.org/abs/2212.02179){:target="blank"}
 
 ## Requirements
 - Python
