@@ -23,8 +23,7 @@ class MBRL:
         self.device = torch.device("cpu")
 
         path = "./log/"+self.env.name+"/mbrl_"+self.arglist.model
-        exp_name = "expt_"+self.arglist.env+"_"+self.arglist.mode+"_mbrl_"+self.arglist.model+"_seed_"+str(self.arglist.seed)+"_alt_FC_128_4"
-        self.exp_dir = os.path.join(path, exp_name)
+        self.exp_dir = os.path.join(path, "seed_"+str(self.arglist.seed))
         self.model_dir = os.path.join(self.exp_dir, "models")
         self.tensorboard_dir = os.path.join(self.exp_dir, "tensorboard")
 
@@ -316,13 +315,13 @@ class MBRL:
 def parse_args():
     parser = argparse.ArgumentParser("Model-Based Reinforcement Learning")
     # Common settings
-    parser.add_argument("--env", type=str, default="acrobot", help="pendulum / reacher / cartpole / acrobot / cart2pole / acro3bot / cart3pole")
+    parser.add_argument("--env", type=str, default="cart3pole", help="pendulum / reacher / cartpole / acrobot / cart2pole / acro3bot / cart3pole")
     parser.add_argument("--mode", type=str, default="", help="train or eval")
-    parser.add_argument("--episodes", type=int, default=2000, help="number of episodes to run experiment for")
+    parser.add_argument("--episodes", type=int, default=500, help="number of episodes to run experiment for")
     parser.add_argument("--seed", type=int, default=0, help="seed")
     # Core training parameters
     parser.add_argument("--resume", action="store_true", default=False, help="continue training from checkpoint")
-    parser.add_argument("--model", type=str, default="dnn", help="lnn / dnn")
+    parser.add_argument("--model", type=str, default="lnn", help="lnn / dnn")
     parser.add_argument("--T", type=int, default=16, help="imagination horizon")
     parser.add_argument("--K", type=int, default=10, help="init replay buffer with K random episodes")
     parser.add_argument("--lr", type=float, default=3e-4, help="learning rate")
