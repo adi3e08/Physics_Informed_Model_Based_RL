@@ -24,8 +24,8 @@
 This work is currently under review at L4DC 2023. Earlier, this work was accepted at Deep RL workshop, Neurips 2022 and RLDM 2022.
 
 For more information check out,
-- [Project Webpage](https://adi3e08.github.io/research/pimbrl){:target="blank"}
-- [Preprint](https://arxiv.org/abs/2212.02179){:target="blank"}
+- [Project Webpage](https://adi3e08.github.io/research/pimbrl)
+- [Preprint](https://arxiv.org/abs/2212.02179)
 
 ## Requirements
 - Python
