@@ -21,7 +21,7 @@
 
 - We also show that, in challenging environments, where we need a lot of samples to learn, physics-informed model-based RL can achieve better average-return than state-of-the-art model-free RL algorithms such as Soft Actor-Critic, by generating accurate imaginary data.
 
-This work is currently under review at L4DC 2023. Previously, this work was accepted at Deep RL workshop, Neurips 2022 and RLDM 2022.
+This work is currently under review at L4DC 2023. Earlier, this work was accepted at Deep RL workshop, Neurips 2022 and RLDM 2022.
 
 For more information check out,
 - [Project Webpage](https://adi3e08.github.io/research/pimbrl){:target="blank"}
