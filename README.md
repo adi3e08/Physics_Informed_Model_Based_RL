@@ -9,7 +9,7 @@ We compare two versions of our model-based RL algorithm, one which uses a standa
 
 We show that, in model-based RL, model accuracy mainly matters in environments that are sensitive to initial conditions. In these environments, the physics-informed version of our algorithm achieves significantly better average-return and sample efficiency. In environments that are not sensitive to initial conditions, both versions of our algorithm achieve similar average-return, while the physics-informed version achieves better sample efficiency. 
 
-We measure the sensitivity to initial conditions by computing the rate of separation of trajectories which start from nearby initial states, i. e., by computing the Lyapunov exponents. Sensitivity to initial conditions depends on factors such as system dynamics, control policy, degree of actuation and damping.
+We measure the sensitivity to initial conditions by computing the rate of separation of trajectories which start from nearby initial states, i. e., by computing the Lyapunov exponents. The sensitivity to initial conditions depends on factors such as the system dynamics, control policy, degree of actuation and damping.
 
 We also show that, in challenging environments, where we need a lot of samples to learn, physics-informed model-based RL can achieve better average-return than state-of-the-art model-free RL algorithms such as Soft Actor-Critic, by generating accurate imaginary data.
 
