@@ -1,9 +1,11 @@
 # Physics-Informed Model-Based RL
 
-We apply model-based RL to robotic systems undergoing rigid body motion without contacts. In our model-based RL algorithm, we learn a model of the environment, essentially its transition dynamics and reward function, use it to generate imaginary trajectories and backpropagate through them to update the policy, exploiting the differentiability of the model. Intuitively, learning more accurate models should lead to better performance.
+We apply model-based RL to robotic systems undergoing rigid body motion without contacts. 
 <p align="center">
 <img src="https://adi3e08.github.io/files/research/pimbrl/envs.png" width="100%"/>
 </p>
+
+In our model-based RL algorithm, we learn a model of the environment, essentially its transition dynamics and reward function, use it to generate imaginary trajectories and backpropagate through them to update the policy, exploiting the differentiability of the model. Intuitively, learning more accurate models should lead to better performance.
 
 We compare two versions of our model-based RL algorithm, one which uses a standard deep neural network based dynamics model and the other which uses a much more accurate, physics-informed neural network based dynamics model.
 
@@ -25,7 +27,6 @@ For more information check out,
 - Pytorch
 - Tensorboard
 - Pygame
-- Matplotlib
 
 ## Usage
 To train MBRL LNN on Acrobot task, run,
