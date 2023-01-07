@@ -91,7 +91,7 @@ class dnn(torch.nn.Module):
 
 # LNN dynamics model
 class lnn(torch.nn.Module):
-    def __init__(self, env_name, n, obs_size, action_size, dt, batch_size, device):
+    def __init__(self, env_name, n, obs_size, action_size, dt, a_zeros):
         super(lnn, self).__init__()
         self.env_name = env_name
         self.dt = dt
@@ -107,8 +107,7 @@ class lnn(torch.nn.Module):
             self.fc2_V = torch.nn.Linear(64, 64)
             self.fc3_V = torch.nn.Linear(64, 1)
 
-        if action_size < self.n:
-            self.a_zeros = torch.zeros(batch_size,self.n-action_size, dtype=torch.float64, device=device)
+        self.a_zeros = a_zeros
 
     def trig_transform_q(self, q):
         if self.env_name == "pendulum":
