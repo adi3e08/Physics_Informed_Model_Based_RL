@@ -170,5 +170,3 @@ class BaseEnv:
             pygame.display.set_caption(self.name)
             self.background = create_background(self.screen_width, self.screen_height)
 
-if __name__ == '__main__':
-    basic_check("cartpole",2,False)
