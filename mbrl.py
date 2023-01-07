@@ -319,8 +319,8 @@ class MBRL:
 def parse_args():
     parser = argparse.ArgumentParser("Model-Based Reinforcement Learning")
     # Common settings
-    parser.add_argument("--env", type=str, default="cart3pole", help="pendulum / reacher / cartpole / acrobot / cart2pole / acro3bot / cart3pole")
-    parser.add_argument("--mode", type=str, default="", help="train or eval")
+    parser.add_argument("--env", type=str, default="acrobot", help="pendulum / reacher / cartpole / acrobot / cart2pole / acro3bot / cart3pole")
+    parser.add_argument("--mode", type=str, default="train", help="train or eval")
     parser.add_argument("--episodes", type=int, default=500, help="number of episodes to run experiment for")
     parser.add_argument("--seed", type=int, default=0, help="seed")
     # Core training parameters
