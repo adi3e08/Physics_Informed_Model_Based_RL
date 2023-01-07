@@ -169,4 +169,3 @@ class BaseEnv:
             self.screen = pygame.display.set_mode((self.screen_width, self.screen_height))
             pygame.display.set_caption(self.name)
             self.background = create_background(self.screen_width, self.screen_height)
-
