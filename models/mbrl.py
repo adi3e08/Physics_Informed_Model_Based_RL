@@ -151,11 +151,12 @@ class lnn(torch.nn.Module):
             return torch.cat((x[:,0].unsqueeze(1),torch.atan2(x[:,2],x[:,1]).unsqueeze(1),torch.atan2(x[:,4],x[:,3]).unsqueeze(1),x[:,5:]),1)
 
         elif self.env_name == "cart3pole":
-            return torch.cat((x[:,0].unsqueeze(1),torch.atan2(x[:,2],x[:,1]).unsqueeze(1),torch.atan2(x[:,4],x[:,3]).unsqueeze(1),\
+            return torch.cat((x[:,0].unsqueeze(1),torch.atan2(x[:,2],x[:,1]).unsqueeze(1),torch.atan2(x[:,4],x[:,3]).unsqueeze(1),
                               torch.atan2(x[:,6],x[:,5]).unsqueeze(1),x[:,7:]),1)
 
         elif self.env_name == "acro3bot":
-            return torch.cat((torch.atan2(x[:,1],x[:,0]).unsqueeze(1),torch.atan2(x[:,3],x[:,2]).unsqueeze(1),torch.atan2(x[:,5],x[:,4]).unsqueeze(1),x[:,6:]),1)
+            return torch.cat((torch.atan2(x[:,1],x[:,0]).unsqueeze(1),torch.atan2(x[:,3],x[:,2]).unsqueeze(1),torch.atan2(x[:,5],x[:,4]).unsqueeze(1),
+                              x[:,6:]),1)
 
     def compute_L(self, q):
         y1_L = F.softplus(self.fc1_L(q))
