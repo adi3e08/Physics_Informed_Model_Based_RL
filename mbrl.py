@@ -34,8 +34,11 @@ class MBRL:
             self.critic_target = deepcopy(self.critic)
             
             if self.arglist.model == "lnn":
-                self.transition_model = lnn(self.env.name, self.env.n, self.env.obs_size, self.env.action_size, self.env.dt, self.arglist.batch_size,
-                                            self.device).to(self.device)
+                if self.env.action_size < self.env.n:
+                    a_zeros = torch.zeros(self.arglist.batch_size,self.env.n-self.env.action_size, dtype=torch.float64, device=self.device)
+                else:
+                    a_zeros = None
+                self.transition_model = lnn(self.env.name, self.env.n, self.env.obs_size, self.env.action_size, self.env.dt, a_zeros).to(self.device)
             
             elif self.arglist.model == "dnn":
                 self.transition_model = dnn(self.env.obs_size, self.env.action_size).to(self.device)
