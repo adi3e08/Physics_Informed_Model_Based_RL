@@ -1,5 +1,7 @@
 # Physics-Informed Model-Based RL
 
+This work has been accepted at <a href="https://l4dc.seas.upenn.edu/" target="_blank">Learning for Dynamics & Control Conference (L4DC)</a> 2023.
+
 We apply model-based RL to robotic systems undergoing rigid body motion without contacts. 
 <p align="center">
 <img src="https://adi3e08.github.io/files/research/pimbrl/envs.png" width="100%"/>
@@ -14,8 +16,6 @@ We show that, in model-based RL, model accuracy mainly matters in environments t
 We measure the sensitivity to initial conditions by computing the rate of separation of trajectories which start from nearby initial states, i. e., by computing the Lyapunov exponents. The sensitivity to initial conditions depends on factors such as the system dynamics, control policy, degree of actuation and damping.
 
 We also show that, in challenging environments, where we need a lot of samples to learn, physics-informed model-based RL can achieve better average-return than state-of-the-art model-free RL algorithms such as Soft Actor-Critic, by generating accurate imaginary data.
-
-This work is currently under review at L4DC 2023. Earlier, this work was accepted at Deep RL workshop, Neurips 2022 and RLDM 2022.
 
 For more information check out,
 - [Project Webpage](https://adi3e08.github.io/research/pimbrl)
