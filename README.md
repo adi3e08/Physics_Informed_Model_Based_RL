@@ -11,7 +11,7 @@ We apply reinforcement learning (RL) to robotics tasks. One of the drawbacks of 
 
 For more information check out,
 - [Project Webpage](https://adi3e08.github.io/research/pimbrl)
-- [Preprint](https://arxiv.org/abs/2212.02179)
+- [Paper](https://arxiv.org/abs/2212.02179)
 
 ## Requirements
 - Python
