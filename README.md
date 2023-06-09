@@ -34,9 +34,18 @@ To evaluate MRBL LNN on Acrobot task, run,
 ## Citation
 If you find this work helpful, please consider starring this repo and citing our paper using the following Bibtex.
 ```bibtex
-@article{ramesh2022physics,
-  title={Physics-Informed Model-Based Reinforcement Learning},
-  author={Ramesh, Adithya and Ravindran, Balaraman},
-  journal={arXiv preprint arXiv:2212.02179},
-  year={2022}
+@InProceedings{pmlr-v211-ramesh23a,
+  title = 	 {Physics-Informed Model-Based Reinforcement Learning},
+  author =       {Ramesh, Adithya and Ravindran, Balaraman},
+  booktitle = 	 {Proceedings of The 5th Annual Learning for Dynamics and Control Conference},
+  pages = 	 {26--37},
+  year = 	 {2023},
+  editor = 	 {Matni, Nikolai and Morari, Manfred and Pappas, George J.},
+  volume = 	 {211},
+  series = 	 {Proceedings of Machine Learning Research},
+  month = 	 {15--16 Jun},
+  publisher =    {PMLR},
+  pdf = 	 {https://proceedings.mlr.press/v211/ramesh23a/ramesh23a.pdf},
+  url = 	 {https://proceedings.mlr.press/v211/ramesh23a.html}
 }
+
