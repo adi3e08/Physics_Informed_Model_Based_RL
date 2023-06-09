@@ -30,3 +30,13 @@ The data from this experiment will be stored in the folder "./log/acrobot/mbrl_l
 To evaluate MRBL LNN on Acrobot task, run,
 
     python mbrl.py --env acrobot --mode eval --episodes 3 --seed 100 --checkpoint ./log/acrobot/mbrl_lnn/seed_0/models/499.ckpt --render
+
+## Citation
+If you find this work helpful, please consider starring this repo and citing our paper using the following Bibtex.
+```bibtex
+@article{ramesh2022physics,
+  title={Physics-Informed Model-Based Reinforcement Learning},
+  author={Ramesh, Adithya and Ravindran, Balaraman},
+  journal={arXiv preprint arXiv:2212.02179},
+  year={2022}
+}
