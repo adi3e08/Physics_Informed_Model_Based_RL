@@ -1,77 +1,79 @@
-from sympy import symbols,cos,sin,simplify,diff,Matrix,linsolve,expand,nsimplify,zeros
+from sympy import symbols,cos,sin,simplify,diff,Matrix,linsolve,expand,nsimplify,zeros,flatten
 from sympy.utilities.lambdify import lambdify
+from sympy.matrices.dense import matrix_multiply_elementwise
 import dill as pickle
 pickle.settings['recurse'] = True
 
-def derive():
-    n = 2
-    m1,l1,r1,I1,m2,l2,r2,I2,g = symbols('m1 l1 r1 I1 m2 l2 r2 I2 g')
-    q1,q2,q1dot,q2dot = symbols('q1 q2 q1dot q2dot')
-    a2 = symbols('a2')
-
-    q = Matrix([q1, q2])
-    qdot = Matrix([q1dot, q2dot])
-
-    T1 = 0.5*m1*((r1*cos(q1)*q1dot)**2 + (-r1*sin(q1)*q1dot)**2) + 0.5*I1*(q1dot**2)
-    T2 = 0.5*m2*((l1*cos(q1)*q1dot+r2*cos(q1+q2)*(q1dot+q2dot))**2 + (-l1*sin(q1)*q1dot-r2*sin(q1+q2)*(q1dot+q2dot))**2) + 0.5*I2*((q1dot+q2dot)**2)
-    T = T1+T2
-
-    V = m1*g*r1*cos(q1)+m2*g*(l1*cos(q1)+r2*cos(q1+q2))
-
-    L = T-V
-
-    M1 = expand(diff(L,q1dot))
-    M2 = expand(diff(L,q2dot))
-    M = nsimplify(Matrix([[M1.coeff(q1dot),M1.coeff(q2dot)],\
-                          [M2.coeff(q1dot),M2.coeff(q2dot)]]))
-    
-    det = simplify(M[0,0]*M[1,1]-M[0,1]**2)
-    Minv = Matrix([[M[1,1],-M[0,1]],\
-                   [-M[0,1],M[0,0]]])/det
-
+def get_C_G(n,M,V,q,qdot):
     C = zeros(n)
     for i in range(n):
         for j in range(n):
             for k in range(n):
                 C[i,j] += (diff(M[i,j],q[k])+diff(M[i,k],q[j])-diff(M[k,j],q[i]))*qdot[k]/2
-    C = simplify(C)
 
     G = Matrix([diff(V,q[i]) for i in range(n)])
-    G = simplify(G)
 
-    qddot = Minv*(Matrix([0, a2]) - C*qdot - G)
-
-    F = Matrix([qdot[i] for i in range(n)]+[qddot[i] for i in range(n)])
-    F = simplify(F)
-    # print(F)
-    H = T + V
-    s = Matrix([q[i] for i in range(n)]+[qdot[i] for i in range(n)])
-    D_s = F.jacobian(s)
-    D_a = F.jacobian(Matrix([a2]))
-    # print(D)
-
-    H_lambda = lambdify([tuple([m1,l1,r1,I1,m2,l2,r2,I2,g]+[q1,q2,q1dot,q2dot])],H,'numpy',cse=True)
-    F_lambda = lambdify([tuple([m1,l1,r1,I1,m2,l2,r2,I2,g]+[q1,q2,q1dot,q2dot]+[a2])],F,'numpy',cse=True)
-    D_lambda = lambdify([tuple([m1,l1,r1,I1,m2,l2,r2,I2,g]+[q1,q2,q1dot,q2dot]+[a2])],(D_s,D_a),'numpy',cse=True)
+    return C,G
     
-    with open("./env/acrobot/dynamics.p", "wb") as outf:
-        pickle.dump({'H':H_lambda,'F':F_lambda,'D':D_lambda}, outf)
+def derive():
+    lambda_dict = {}
+    n = 2
+    m1,m2 = symbols('m1,m2')
+    l1,l2 = symbols('l1,l2')
+    r1,r2 = symbols('r1,r2')
+    I1,I2 = symbols('I1,I2')
+    g = symbols('g')
+    q1,q2 = symbols('q1,q2')
+    q1dot,q2dot = symbols('q1dot,q2dot')
+
+    m = [m1,m2]
+    l = [l1,l2]
+    r = [r1,r2]
+    I = [I1,I2]
+    inertials = m+l+r+I+[g]
+
+    q = Matrix([q1,q2])
+    qdot = Matrix([q1dot,q2dot])
+    state = [q1,q2,q1dot,q2dot]
+
+    J_w = Matrix([[1,0],
+                  [1,1]
+                 ])
+
+    angles = J_w * q
+
+    V = 0
+    M = zeros(n)
+    J = []
+    for i in range(n):
+        if i == 0:
+            joint = Matrix([[0, 0]])
+            center = joint + (r[i])*Matrix([[sin(angles[i]),cos(angles[i])]])
+            joints = joint
+            centers = center
+        else:
+            joint = joint + l[i-1]*Matrix([[sin(angles[i-1]),cos(angles[i-1])]])
+            center = joint + (r[i])*Matrix([[sin(angles[i]),cos(angles[i])]])
+            joints = Matrix.vstack(joints, joint)
+            centers = Matrix.vstack(centers, center)
+        
+        J_v = center.jacobian(q)
+        # J.append(J_v)
+        M_i = m[i] * J_v.T * J_v + I[i] * J_w[i,:].T * J_w[i,:]
+        M += M_i
+             
+        V += m[i]*g*center[0,1]
+
+    # print(cse([centers,joints,J_w]+J, optimizations='basic'))
+
+    C,G = get_C_G(n,M,V,q,qdot)
+    lambda_dict['kinematics'] = lambdify([tuple(inertials+state)],[centers,joints,angles],'numpy',cse=True)
+    lambda_dict['dynamics'] = lambdify([tuple(inertials+state)],[M,C,G],'numpy',cse=True)
+    
+    with open("./env/acrobot/robot.p", "wb") as outf:
+        pickle.dump(lambda_dict, outf)
 
     print("Done")
 
-def check():
-    inertial_params = [0.1,1.0,0.5,0.1/12,0.1,1.0,0.5,0.1/12,9.8]
-    s = [1,1,0,0]
-    a = [0,1]
-
-    with open("./env/acrobot/dynamics.p", "rb") as inf:
-        funcs = pickle.load(inf)
-    
-    H, F, D = funcs['H'], funcs['F'], funcs['D']        
-    print(H(inertial_params+s))
-    print(F(inertial_params+s+a).flatten())
-    print(D(inertial_params+s+a))
-
 if __name__ == '__main__':
     derive()
-    check()
