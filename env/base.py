@@ -5,48 +5,59 @@ import dill as pickle
 pickle.settings['recurse'] = True
 import pygame
 import numpy as np
-from scipy.integrate import solve_ivp
-from env import rewards
-from env.utils import create_background, rect_points, wrap, basic_check, post_process
+from env.utils import create_background
 from copy import deepcopy
 
 class BaseEnv:
-    def __init__(self,name,n,obs_size,action_size,inertials,dt,a_scale,mle):
+    def __init__(self,name,n,obs_size,action_size,inertials,a_scale):
         self.name = name
         self.n = n
         self.obs_size = obs_size
         self.action_size = action_size
         self.inertials = inertials
-        self.dt = dt # time per simulation step
         self.a_scale = a_scale
-        self.mle = mle
 
-        self.t = 0 # no of simulation steps
+        self.dt = 0.01 # time per simulation step (in seconds)
+        self.t = 0 # elapsed simulation steps
         self.t_max = 1000  # max simulation steps
         self.state = np.zeros(self.n)
-        self.w = np.array([0.0]) # work done by non conservative forces (motor torques)
+        self.ang_vel_limit = 20.0
 
-        with open("./env/"+self.name+"/dynamics.p", "rb") as inf:
+        with open("./env/"+self.name+"/robot.p", "rb") as inf:
             funcs = pickle.load(inf)                
-        self.H = funcs['H']
-        self.F = funcs['F']
-        if self.mle:
-            self.jac = funcs['D']
-            self.phi_dim = 2*self.n
-            self.phi = np.identity(self.phi_dim)
-            self.phi_len = self.phi_dim*self.phi_dim
-        self.a_zeros = np.zeros(self.action_size)
+        self.kinematics = funcs['kinematics']
+        self.dynamics = funcs['dynamics']
 
+        # For rendering
         self.display = False
         self.screen_width = 500
         self.screen_height = 500
+        self.offset = [250, 250]
+        self.scaling = 75
         self.x_limit = 2.0
-        self.ang_vel_limit = 20.0
+
+        self.link_length = 1.0
+        self.link_width = 0.2
+        self.link_color = (72,209,204) # medium turquoise
+
+        self.joint_radius = self.link_width/1.8
+        self.joint_color = (205,55,0) # orange red
+
+        self.cart_length = 5*self.link_width
+        self.cart_width = 2*self.link_width
+        self.cart_color = (200,255,0) # yellow
+
+        self.rail_length = 2*self.x_limit
+        self.rail_width = self.link_width/2.5
+        self.rail_color = (150,150,150) # gray
 
     def wrap_state(self):
         pass
 
     def reset_state(self):
+        pass
+
+    def get_A(self):
         pass
 
     def get_obs(self):
@@ -55,107 +66,62 @@ class BaseEnv:
     def get_reward(self):
         pass
 
-    def get_power(self, a, sdot):
-        pass
-
     def draw(self):
         pass
 
     def set_state(self,s):
         self.state = s
 
-    def calculate_total_energy(self):
-        H = self.H(self.inertials+self.state.tolist())
-        return H
-        
-    def get_jac(self, a):
-        return self.jac(self.inertials+self.state.tolist()+a.tolist())
-
-    def get_components(self, s_all):
-        if self.mle:
-            s = s_all[:-(self.phi_len+1+self.action_size)]
-            a = s_all[-(self.phi_len+1+self.action_size):-(self.phi_len+1)]
-            w = s_all[-(self.phi_len+1):-self.phi_len]
-            phi = s_all[-self.phi_len:].reshape((self.phi_dim,self.phi_dim))
-            return s,a,w,phi
-        else:
-            s = s_all[:-(1+self.action_size)]
-            a = s_all[-(1+self.action_size):-1]
-            w = s_all[-1:]
-            return s,a,w
-
-    def rk4(self, s_all, da_ds):
-        s_all_orig = deepcopy(s_all)
-        k = []
-        da = np.zeros((self.action_size,self.phi_dim))
-        for l in range(4):
-            s,a,w,phi = self.get_components(s_all)
-            sdot = self.F(self.inertials+s.tolist()+a.tolist()).flatten()
-            jac_s, jac_a = self.jac(self.inertials+s.tolist()+a.tolist())
-            phidot = np.zeros((self.phi_dim,self.phi_dim))
-            for m in range(self.phi_dim):
-                phi[:,m] = post_process(phi[:,m],self.name)
-                if l == 0:
-                    da[:,m] = np.matmul(da_ds,phi[:,m])
-                phidot[:,m] = (np.matmul(jac_s,phi[:,m]) + np.matmul(jac_a,da[:,m]))
-            k_l = np.concatenate((sdot, self.a_zeros, self.get_power(a, sdot), phidot.flatten()))
-            k.append(k_l)
-            if l == 0 or l == 1:
-                s_all = (s_all_orig + self.dt * k_l / 2)
-            elif l == 2:
-                s_all = (s_all_orig + self.dt * k_l)
-            elif l == 3:
-                s_all = s_all_orig + self.dt / 6.0 * (k[0] + 2 * k[1] + 2 * k[2] + k[3])
-        
-        return s_all
-
     def reset(self):
         self.reset_state()
-
-        if self.mle:
-            self.phi = np.identity(self.phi_dim)
-                
-        self.t = 0
-        self.w = np.array([0.0])
-
-        self.reward_breakup = []
-
-        return self.get_obs(), 0.0, False 
-
-    def step(self, a, da_ds=None):
-        s = self.state
-        a = np.clip(a, -1.0, 1.0)
-        w = self.w
-        
-        if self.mle:
-            s_all = np.concatenate((s, a*self.a_scale, w, self.phi.flatten()))
-            ns = self.rk4(s_all,np.array([da_ds[j]*self.a_scale[j] for j in range(self.action_size)]))
-            ns, nw, nphi = ns[:-(self.phi_len+1+self.action_size)], ns[-(self.phi_len+1):-self.phi_len], ns[-self.phi_len:]  # omit action
-            self.phi = nphi.reshape((self.phi_dim,self.phi_dim))
-            for m in range(self.phi_dim):
-                self.phi[:,m] = post_process(self.phi[:,m],self.name)
-        else:
-            s_all = np.concatenate((s, a*self.a_scale, w))
-            ns = solve_ivp(self._dsdt, [0, self.dt], s_all, method='DOP853')
-            ns = ns.y[:,-1]  # only care about final timestep
-            ns, nw = ns[:-(1+self.action_size)], ns[-1:]  # omit action
-
-        self.w = nw
-        self.state = ns
         self.wrap_state()
+        self.geo = self.kinematics(self.inertials+self.state.tolist())
+        
+        self.t = 0
+
+        if self.display:
+            self.render()
+
+        return self.get_obs(), 0.0, False
+
+    def step(self, a):
+        self.state = self.rk4(self.state, self.get_A(a))
+        self.wrap_state()
+        self.geo = self.kinematics(self.inertials+self.state.tolist())
+        
         self.t += 1
-                        
+
         if self.t >= self.t_max: # infinite horizon formulation, no terminal state, similar to dm_control
             done = True
         else:
             done = False
 
+        if self.display:
+            self.render()
+
         return self.get_obs(), self.get_reward(), done
 
-    def _dsdt(self, t, s_all):
-        s,a,w = self.get_components(s_all)
-        sdot = self.F(self.inertials+s.tolist()+a.tolist()).flatten()
-        return np.concatenate((sdot, self.a_zeros, self.get_power(a, sdot)))
+    def F(self, s, a):
+        M, C, G = self.dynamics(self.inertials+s.tolist())
+        qdot = s[self.n:]
+        qddot = np.linalg.inv(M+1e-6*np.eye(self.n)) @ (a - C @ qdot - G.flatten()) 
+        
+        return np.concatenate((qdot,qddot))
+
+    def rk4(self, s, a):
+        s0 = deepcopy(s)
+        k = []
+        for l in range(4):
+            if l > 0:
+                if l == 1 or l == 2:
+                    dt = self.dt/2
+                elif l == 3:
+                    dt = self.dt
+                s = s0 + dt * k[l-1]
+            k.append(self.F(s, a))
+        s = s0 + (self.dt/6.0) * (k[0] + 2 * k[1] + 2 * k[2] + k[3])
+        
+        return s
 
     def render(self):
         if self.display:
