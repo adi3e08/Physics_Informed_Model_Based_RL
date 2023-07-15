@@ -3,50 +3,59 @@ os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 import numpy as np
 from env import rewards
-from env.utils import rect_points, wrap, basic_check
+from env.utils import rect_points, wrap, basic_check, pygame_transform
 from env.base import BaseEnv
 
 class acro3bot(BaseEnv):
-    def __init__(self, mle):
+    def __init__(self):
         m1 = 0.1
-        self.l1 = 1
-        self.r1 = self.l1/2
-        I1 = m1 * self.l1**2 / 12
+        l1 = 1
+        r1 = l1/2
+        I1 = m1 * l1**2 / 12
+        
         m2 = 0.1
-        self.l2 = 1
-        self.r2 = self.l2/2
-        I2 = m2 * self.l2**2 / 12
+        l2 = 1
+        r2 = l2/2
+        I2 = m2 * l2**2 / 12
+        
         m3 = 0.1
-        self.l3 = 1
-        self.r3 = self.l3/2
-        I3 = m3 * self.l3**2 / 12
+        l3 = 1
+        r3 = l3/2
+        I3 = m3 * l3**2 / 12
+        
         g = 9.8
+
+        m = [m1,m2,m3]
+        l = [l1,l2,l3]
+        r = [r1,r2,r3]
+        I = [I1,I2,I3]
         super(acro3bot, self).__init__(name = "acro3bot",
                                        n = 3,
                                        obs_size = 9,
                                        action_size = 2,
-                                       inertials = [m1,self.l1,self.r1,I1,m2,self.l2,self.r2,I2,
-                                                    m3,self.l3,self.r3,I3,g],
-                                       dt = 0.01,
-                                       a_scale = np.array([0.5,2.0]),
-                                       mle = mle)
+                                       inertials = m+l+r+I+[g],
+                                       a_scale = np.array([0.5,2.0]))
 
     def wrap_state(self):
         self.state[:3] = wrap(self.state[:3])
 
     def reset_state(self):
-        self.state = np.array([np.pi + 0.01*np.random.randn(),\
-                               0.01*np.random.randn(),\
-                               0.01*np.random.randn(),\
+        self.state = np.array([np.pi + 0.01*np.random.randn(),
+                               0.01*np.random.randn(),
+                               0.01*np.random.randn(),
                                0,0,0])
-        self.wrap_state()
+
+    def get_A(self, a):
+        a_1, a_3 = np.clip(a, -1.0, 1.0)*self.a_scale
+        a_2 = 0.0
+        return np.array([a_1,a_2,a_3])
 
     def get_obs(self):
-        return np.array([np.cos(self.state[0]),np.sin(self.state[0]),\
-                        np.cos(self.state[1]),np.sin(self.state[1]),\
-                        np.cos(self.state[2]),np.sin(self.state[2]),\
-                        self.state[3],\
-                        self.state[4],\
+        return np.array([np.cos(self.state[0]),np.sin(self.state[0]),
+                        np.cos(self.state[1]),np.sin(self.state[1]),
+                        np.cos(self.state[2]),np.sin(self.state[2]),
+                        self.state[3],
+                        self.state[4],
                         self.state[5]
                         ])
 
@@ -60,48 +69,17 @@ class acro3bot(BaseEnv):
         
         reward = upright.mean() * small_velocity
 
-        self.reward_breakup.append([upright.mean(),small_velocity])
-
         return reward
 
-    def get_power(self, a, sdot):
-        return np.array([a[0]*sdot[0]+a[1]*sdot[2]])
-
     def draw(self):
-        offset = [250, 250]
-        scaling = 75
-        height = 0.125
+        centers, joints, angles = self.geo
+
+        for j in range(self.n):
+            link_points = rect_points(centers[j], self.link_length, self.link_width, angles[j,0],self.scaling,self.offset)
+            pygame.draw.polygon(self.screen, self.link_color, link_points)
         
-        joint2 = [offset[0],offset[1]]
-        link2_center = [(self.l1/2)*np.sin(self.state[0]),\
-                       (self.l1/2)*np.cos(self.state[0])]
-        link2_points = rect_points(link2_center, self.l1, height, np.pi/2-self.state[0],scaling,offset)
-        pygame.draw.polygon(self.screen, (72,209,204), link2_points) # medium turquoise
-        pygame.draw.circle(self.screen,(255,69,0), joint2, scaling*height/1.8) # orange red
-
-        joint3 = [offset[0]+scaling*((self.l1)*np.sin(self.state[0])),offset[1]-scaling*((self.l1)*np.cos(self.state[0]))]
-        link3_center = np.array([(self.l1)*np.sin(self.state[0])+(self.l2/2)*np.sin(self.state[0]+self.state[1]),\
-                                  (self.l1)*np.cos(self.state[0])+(self.l2/2)*np.cos(self.state[0]+self.state[1])])
-        link3_points = rect_points(link3_center, self.l2, height, np.pi/2-self.state[0]-self.state[1],scaling,offset)
-        pygame.draw.polygon(self.screen, (72,209,204), link3_points) # medium turquoise
-        pygame.draw.circle(self.screen,(255,69,0), joint3, scaling*height/1.8) # orange red
-
-        joint4 = [offset[0]+scaling*((self.l1)*np.sin(self.state[0])+(self.l2)*np.sin(self.state[0]+self.state[1])),\
-                  offset[1]-scaling*((self.l1)*np.cos(self.state[0])+(self.l2)*np.cos(self.state[0]+self.state[1]))]
-        link4_center = np.array([(self.l1)*np.sin(self.state[0])+(self.l2)*np.sin(self.state[0]+self.state[1])\
-                                 +(self.l3/2)*np.sin(self.state[0]+self.state[1]+self.state[2]),\
-                                 (self.l1)*np.cos(self.state[0])+(self.l2)*np.cos(self.state[0]+self.state[1])\
-                                 +(self.l3/2)*np.cos(self.state[0]+self.state[1]+self.state[2])])
-        link4_points = rect_points(link4_center, self.l3, height, np.pi/2-self.state[0]-self.state[1]-self.state[2],scaling,offset)
-        pygame.draw.polygon(self.screen, (72,209,204), link4_points) # medium turquoise
-        pygame.draw.circle(self.screen,(255,69,0), joint4, scaling*height/1.8) # orange red
-
-        end_point_plot = np.array([(self.l1)*np.sin(self.state[0])+(self.l2)*np.sin(self.state[0]+self.state[1])\
-                                 +(self.l3)*np.sin(self.state[0]+self.state[1]+self.state[2]),\
-                                 (self.l1)*np.cos(self.state[0])+(self.l2)*np.cos(self.state[0]+self.state[1])\
-                                 +(self.l3)*np.cos(self.state[0]+self.state[1]+self.state[2])])
-        end_point = [offset[0]+scaling*end_point_plot[0],offset[1]-scaling*end_point_plot[1]]
-        # pygame.draw.circle(self.screen,(255,69,0), end_point, scaling*height/1.8) # orange red #endpoint
+            joint_point = pygame_transform(joints[j],self.scaling,self.offset)
+            pygame.draw.circle(self.screen, self.joint_color, joint_point, self.scaling*self.joint_radius)
 
 if __name__ == '__main__':
     basic_check("acro3bot",0)
