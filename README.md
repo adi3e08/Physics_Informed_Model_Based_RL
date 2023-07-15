@@ -1,6 +1,6 @@
 # Physics-Informed Model-Based RL
 
-This work has been accepted at <a href="https://l4dc.seas.upenn.edu/" target="_blank">Learning for Dynamics & Control Conference (L4DC), 2023</a>.
+Published at <a href="https://l4dc.seas.upenn.edu/" target="_blank">Learning for Dynamics & Control Conference (L4DC), 2023</a>.
 
 <p align="center">
 <img src="https://adi3e08.github.io/files/research/pimbrl/envs.png" width="100%"/>
