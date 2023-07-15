@@ -3,7 +3,7 @@ import torch
 torch.set_default_dtype(torch.float64)
 import torch.nn.functional as F
 from torch.distributions.normal import Normal
-from functorch import jacrev
+from torch.func import jacrev
 from collections import deque
 import random
 
