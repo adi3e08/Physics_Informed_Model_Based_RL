@@ -3,53 +3,65 @@ os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 import numpy as np
 from env import rewards
-from env.utils import rect_points, wrap, basic_check
+from env.utils import rect_points, wrap, basic_check, pygame_transform
 from env.base import BaseEnv
 
 class cart3pole(BaseEnv):
-    def __init__(self, mle):
+    def __init__(self):
         m1 = 1
+        l1, r1, I1 = 0, 0, 0 # dummy
+        
         m2 = 0.1
-        self.l2 = 1
-        self.r2 = self.l2/2
-        I2 = m2 * self.l2**2 / 12
+        l2 = 1
+        r2 = l2/2
+        I2 = m2 * l2**2 / 12
+        
         m3 = 0.1
-        self.l3 = 1
-        self.r3 = self.l3/2
-        I3 = m3 * self.l3**2 / 12
+        l3 = 1
+        r3 = l3/2
+        I3 = m3 * l3**2 / 12
+        
         m4 = 0.1
-        self.l4 = 1
-        self.r4 = self.l4/2
-        I4 = m4 * self.l4**2 / 12
+        l4 = 1
+        r4 = l4/2
+        I4 = m4 * l4**2 / 12
+        
         g = 9.8
+
+        m = [m1,m2,m3,m4]
+        l = [l1,l2,l3,l4]
+        r = [r1,r2,r3,r4]
+        I = [I1,I2,I3,I4]
         super(cart3pole, self).__init__(name = "cart3pole",
-                                       n = 4,
-                                       obs_size = 11,
-                                       action_size = 2,
-                                       inertials = [m1,m2,self.l2,self.r2,I2,m3,self.l3,self.r3,I3,
-                                                    m4,self.l4,self.r4,I4,g],
-                                       dt = 0.01,
-                                       a_scale = np.array([10.0,1.0]),
-                                       mle = mle)
+                                        n = 4,
+                                        obs_size = 11,
+                                        action_size = 2,
+                                        inertials = m+l+r+I+[g],
+                                        a_scale = np.array([10.0,1.0]))
+
     def wrap_state(self):
         self.state[1:4] = wrap(self.state[1:4])
 
     def reset_state(self):
-        self.state = np.array([0.01*np.random.randn(),\
-                               np.pi + 0.01*np.random.randn(),\
-                               0.01*np.random.randn(),\
-                               0.01*np.random.randn(),\
+        self.state = np.array([0.01*np.random.randn(),
+                               np.pi + 0.01*np.random.randn(),
+                               0.01*np.random.randn(),
+                               0.01*np.random.randn(),
                                0,0,0,0])
-        self.wrap_state()
+
+    def get_A(self, a):
+        a_1, a_4 = np.clip(a, -1.0, 1.0)*self.a_scale
+        a_2, a_3 = 0.0, 0.0
+        return np.array([a_1,a_2,a_3,a_4])
 
     def get_obs(self):
-        return np.array([self.state[0],\
-                        np.cos(self.state[1]),np.sin(self.state[1]),\
-                        np.cos(self.state[2]),np.sin(self.state[2]),\
-                        np.cos(self.state[3]),np.sin(self.state[3]),\
-                        self.state[4],\
-                        self.state[5],\
-                        self.state[6],\
+        return np.array([self.state[0],
+                        np.cos(self.state[1]),np.sin(self.state[1]),
+                        np.cos(self.state[2]),np.sin(self.state[2]),
+                        np.cos(self.state[3]),np.sin(self.state[3]),
+                        self.state[4],
+                        self.state[5],
+                        self.state[6],
                         self.state[7]
                         ])
 
@@ -69,58 +81,24 @@ class cart3pole(BaseEnv):
         
         reward = upright.mean() * small_velocity * centered
 
-        self.reward_breakup.append([upright.mean(),small_velocity,centered])
-
         return reward
 
-    def get_power(self, a, sdot):
-        return np.array([a[0]*sdot[0]+a[1]*sdot[3]])
+    def draw(self):        
+        centers, joints, angles = self.geo
 
-    def draw(self):
-        offset = [250, 250]
-        scaling = 75
-        height = 0.125
+        #horizontal rail
+        pygame.draw.polygon(self.screen, self.rail_color, rect_points([0,0], self.rail_length, self.rail_width, np.pi/2, self.scaling, self.offset)) 
+
+        plot_x = ((centers[0,0] + self.x_limit) % (2 * self.x_limit)) - self.x_limit
+        link1_points = rect_points([plot_x,0], self.cart_length, self.cart_width, np.pi/2, self.scaling, self.offset) 
+        pygame.draw.polygon(self.screen, self.cart_color, link1_points)
         
-        x_limit = self.x_limit
-        # x_limit = 8/3
-        plot_x = ((self.state[0] + x_limit) % (2 * x_limit)) - x_limit
-        # plot_x = self.state[0]
+        for j in range(1,self.n):
+            link_points = rect_points(centers[j], self.link_length, self.link_width, angles[j,0],self.scaling,self.offset)
+            pygame.draw.polygon(self.screen, self.link_color, link_points)
         
-        link1_center = [plot_x,0]
-        link1_points = rect_points(link1_center, 5*height, 2*height, 0,scaling,offset) 
-        pygame.draw.polygon(self.screen, (150,150,150), rect_points([0,0], 2*x_limit, height/3, 0, scaling,offset)) # gray horizontal rail
-        pygame.draw.polygon(self.screen, (200,255,0), link1_points) # yellow
-        
-        joint2 = [offset[0]+scaling*plot_x,offset[1]]
-        link2_center = [plot_x+(self.l2/2)*np.sin(self.state[1]),\
-                       (self.l2/2)*np.cos(self.state[1])]
-        link2_points = rect_points(link2_center, self.l2, height, np.pi/2-self.state[1],scaling,offset)
-        pygame.draw.polygon(self.screen, (72,209,204), link2_points) # medium turquoise
-        pygame.draw.circle(self.screen,(255,69,0), joint2, scaling*height/1.8) # orange red
-
-        joint3 = [offset[0]+scaling*(plot_x+(self.l2)*np.sin(self.state[1])),offset[1]-scaling*((self.l2)*np.cos(self.state[1]))]
-        link3_center = np.array([plot_x+(self.l2)*np.sin(self.state[1])+(self.l3/2)*np.sin(self.state[1]+self.state[2]),\
-                                  (self.l2)*np.cos(self.state[1])+(self.l3/2)*np.cos(self.state[1]+self.state[2])])
-        link3_points = rect_points(link3_center, self.l3, height, np.pi/2-self.state[1]-self.state[2],scaling,offset)
-        pygame.draw.polygon(self.screen, (72,209,204), link3_points) # medium turquoise
-        pygame.draw.circle(self.screen,(255,69,0), joint3, scaling*height/1.8) # orange red
-
-        joint4 = [offset[0]+scaling*(plot_x+(self.l2)*np.sin(self.state[1])+(self.l3)*np.sin(self.state[1]+self.state[2])),\
-                  offset[1]-scaling*((self.l2)*np.cos(self.state[1])+(self.l3)*np.cos(self.state[1]+self.state[2]))]
-        link4_center = np.array([plot_x+(self.l2)*np.sin(self.state[1])+(self.l3)*np.sin(self.state[1]+self.state[2])\
-                                 +(self.l4/2)*np.sin(self.state[1]+self.state[2]+self.state[3]),\
-                                 (self.l2)*np.cos(self.state[1])+(self.l3)*np.cos(self.state[1]+self.state[2])\
-                                 +(self.l4/2)*np.cos(self.state[1]+self.state[2]+self.state[3])])
-        link4_points = rect_points(link4_center, self.l4, height, np.pi/2-self.state[1]-self.state[2]-self.state[3],scaling,offset)
-        pygame.draw.polygon(self.screen, (72,209,204), link4_points) # medium turquoise
-        pygame.draw.circle(self.screen,(255,69,0), joint4, scaling*height/1.8) # orange red
-
-        end_point_plot = np.array([plot_x+(self.l2)*np.sin(self.state[1])+(self.l3)*np.sin(self.state[1]+self.state[2])\
-                                 +(self.l4)*np.sin(self.state[1]+self.state[2]+self.state[3]),\
-                                 (self.l2)*np.cos(self.state[1])+(self.l3)*np.cos(self.state[1]+self.state[2])\
-                                 +(self.l4)*np.cos(self.state[1]+self.state[2]+self.state[3])])
-        end_point = [offset[0]+scaling*end_point_plot[0],offset[1]-scaling*end_point_plot[1]]
-        # pygame.draw.circle(self.screen,(255,69,0), end_point, scaling*height/1.8) # orange red #endpoint
+            joint_point = pygame_transform(joints[j],self.scaling,self.offset)
+            pygame.draw.circle(self.screen, self.joint_color, joint_point, self.scaling*self.joint_radius)
 
 if __name__ == '__main__':
     basic_check("cart3pole",0)
