@@ -3,40 +3,50 @@ os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 import numpy as np
 from env import rewards
-from env.utils import rect_points, wrap, basic_check
+from env.utils import rect_points, wrap, basic_check, pygame_transform
 from env.base import BaseEnv
 
 class cartpole(BaseEnv):
-    def __init__(self, mle):
+    def __init__(self):
         m1 = 1
+        l1, r1, I1 = 0, 0, 0 # dummy
+        
         m2 = 0.1
-        self.l2 = 1
-        self.r2 = self.l2/2
-        I2 = m2 * self.l2**2 / 12
+        l2 = 1
+        r2 = l2/2
+        I2 = m2 * l2**2 / 12
+        
         g = 9.8
+
+        m = [m1,m2]
+        l = [l1,l2]
+        r = [r1,r2]
+        I = [I1,I2]
         super(cartpole, self).__init__(name = "cartpole",
                                        n = 2,
                                        obs_size = 5,
                                        action_size = 1,
-                                       inertials = [m1,m2,self.l2,self.r2,I2,g],
-                                       dt = 0.01,
-                                       a_scale = np.array([10.0]),
-                                       mle = mle)
+                                       inertials = m+l+r+I+[g],
+                                       a_scale = np.array([10.0]))
 
     def wrap_state(self):
         self.state[1] = wrap(self.state[1])
 
     def reset_state(self):
-        self.state = np.array([0.01*np.random.randn(),\
-                               np.pi + 0.01*np.random.randn(),\
+        self.state = np.array([0.01*np.random.randn(),
+                               np.pi + 0.01*np.random.randn(),
                                0,0])
-        self.wrap_state()
+
+    def get_A(self, a):
+        a_1, = np.clip(a, -1.0, 1.0)*self.a_scale
+        a_2 = 0.0
+        return np.array([a_1,a_2])
 
     def get_obs(self):
-        return np.array([self.state[0],\
-                        np.cos(self.state[1]),np.sin(self.state[1]),\
-                        self.state[2],\
-                        self.state[3]\
+        return np.array([self.state[0],
+                        np.cos(self.state[1]),np.sin(self.state[1]),
+                        self.state[2],
+                        self.state[3]
                         ])
 
     def get_reward(self):
@@ -55,35 +65,24 @@ class cartpole(BaseEnv):
 
         reward = upright.mean() * small_velocity * centered
 
-        self.reward_breakup.append([upright.mean(),small_velocity,centered])
-
-        return reward
-
-    def get_power(self, a, sdot):
-        return np.array([a[0]*sdot[0]])       
+        return reward  
     
-    def draw(self):
-        offset = [250, 250]
-        scaling = 75
-        height = 0.15
-        
-        x_limit = self.x_limit
-        plot_x = ((self.state[0] + x_limit) % (2 * x_limit)) - x_limit
-        # plot_x = self.state[0]
-        
-        link1_center = [plot_x,0]
-        link1_points = rect_points(link1_center, 5*height, 2*height, 0,scaling,offset) 
-        
-        joint2 = [offset[0]+scaling*plot_x,offset[1]]
-        link2_center = [plot_x+(self.l2/2)*np.sin(self.state[1]),\
-                       (self.l2/2)*np.cos(self.state[1])]
-        link2_points = rect_points(link2_center, self.l2, height, np.pi/2-self.state[1],scaling,offset)
-        
-        pygame.draw.polygon(self.screen, (150,150,150), rect_points([0,0], 2*x_limit, height/3, 0, scaling,offset)) # gray horizontal rail
+    def draw(self):        
+        centers, joints, angles = self.geo
 
-        pygame.draw.polygon(self.screen, (200,255,0), link1_points) # yellow
-        pygame.draw.polygon(self.screen, (72,209,204), link2_points) # medium turquoise
-        pygame.draw.circle(self.screen,(255,69,0), joint2, scaling*height/1.8) # orange red
+        #horizontal rail
+        pygame.draw.polygon(self.screen, self.rail_color, rect_points([0,0], self.rail_length, self.rail_width, np.pi/2, self.scaling, self.offset)) 
+
+        plot_x = ((centers[0,0] + self.x_limit) % (2 * self.x_limit)) - self.x_limit
+        link1_points = rect_points([plot_x,0], self.cart_length, self.cart_width, np.pi/2, self.scaling, self.offset) 
+        pygame.draw.polygon(self.screen, self.cart_color, link1_points)
+        
+        for j in range(1,self.n):
+            link_points = rect_points(centers[j], self.link_length, self.link_width, angles[j,0],self.scaling,self.offset)
+            pygame.draw.polygon(self.screen, self.link_color, link_points)
+        
+            joint_point = pygame_transform(joints[j],self.scaling,self.offset)
+            pygame.draw.circle(self.screen, self.joint_color, joint_point, self.scaling*self.joint_radius)
 
 if __name__ == '__main__':
     basic_check("cartpole",0)
