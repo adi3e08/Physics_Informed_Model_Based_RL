@@ -76,11 +76,7 @@ class BaseEnv:
         self.reset_state()
         self.wrap_state()
         self.geo = self.kinematics(self.inertials+self.state.tolist())
-        
         self.t = 0
-
-        if self.display:
-            self.render()
 
         return self.get_obs(), 0.0, False
 
@@ -90,14 +86,10 @@ class BaseEnv:
         self.geo = self.kinematics(self.inertials+self.state.tolist())
         
         self.t += 1
-
         if self.t >= self.t_max: # infinite horizon formulation, no terminal state, similar to dm_control
             done = True
         else:
             done = False
-
-        if self.display:
-            self.render()
 
         return self.get_obs(), self.get_reward(), done
 
@@ -127,7 +119,7 @@ class BaseEnv:
         if self.display:
             self.screen.blit(self.background, (0, 0))
             self.draw()
-            time.sleep(0.003)
+            time.sleep(0.005)
             pygame.display.flip()
         else:
             self.display = True
