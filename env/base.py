@@ -119,7 +119,7 @@ class BaseEnv:
         if self.display:
             self.screen.blit(self.background, (0, 0))
             self.draw()
-            time.sleep(0.005)
+            time.sleep(0.006)
             pygame.display.flip()
         else:
             self.display = True
