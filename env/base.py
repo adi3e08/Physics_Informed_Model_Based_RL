@@ -57,7 +57,7 @@ class BaseEnv:
     def reset_state(self):
         pass
 
-    def get_A(self):
+    def get_A(self, a):
         pass
 
     def get_obs(self):
@@ -127,7 +127,7 @@ class BaseEnv:
         if self.display:
             self.screen.blit(self.background, (0, 0))
             self.draw()
-            time.sleep(0.01)
+            time.sleep(0.003)
             pygame.display.flip()
         else:
             self.display = True
