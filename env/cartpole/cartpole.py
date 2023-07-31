@@ -77,11 +77,12 @@ class cartpole(BaseEnv):
         link1_points = rect_points([plot_x,0], self.cart_length, self.cart_width, np.pi/2, self.scaling, self.offset) 
         pygame.draw.polygon(self.screen, self.cart_color, link1_points)
         
+        offset = np.array([plot_x-centers[0,0],0])
         for j in range(1,self.n):
-            link_points = rect_points(centers[j], self.link_length, self.link_width, angles[j,0],self.scaling,self.offset)
+            link_points = rect_points(centers[j]+offset, self.link_length, self.link_width, angles[j,0],self.scaling,self.offset)
             pygame.draw.polygon(self.screen, self.link_color, link_points)
         
-            joint_point = pygame_transform(joints[j],self.scaling,self.offset)
+            joint_point = pygame_transform(joints[j]+offset,self.scaling,self.offset)
             pygame.draw.circle(self.screen, self.joint_color, joint_point, self.scaling*self.joint_radius)
 
 if __name__ == '__main__':
