@@ -92,5 +92,6 @@ class cart2pole(BaseEnv):
             joint_point = pygame_transform(joints[j]+offset,self.scaling,self.offset)
             pygame.draw.circle(self.screen, self.joint_color, joint_point, self.scaling*self.joint_radius)
 
+
 if __name__ == '__main__':
     basic_check("cart2pole",0)
